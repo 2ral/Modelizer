@@ -1,0 +1,53 @@
+[project]
+name = "modelizer"
+authors = [{name = "Tural Mammadov", email = "tural.mammadov@cispa.de"}]
+version = "1.0.0"
+description = "Modelizer - is a framework for learning models from BlackBox systems using Input-Output examples"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["deep learning", "program analysis", "machine learning", "artificial intelligence", "reverse engineering", "fuzzing", "software testing"]
+classifiers = [
+    "Framework :: Modelizer",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Analysis",
+    "Topic :: Software Development :: Software Testing",
+    "Topic :: Software Development :: Reverse Engineering",
+]
+
+dependencies = [
+    'pandoc==2.3',
+    'torch>=2.0.1',
+    'torchtext',
+    'fuzzingbook>=1.2',
+    'jiwer>=3.0.3',
+    'nltk>=3.8.1',
+    'levenshtein>=0.23.0',
+    'pylev>=1.4.0',
+    'pandoc==2.3',
+    'msticpy==2.9.0',
+    'sqlparse==0.4.4',
+    'latexify-py==0.2.0',
+    'py-asciimath==0.3.0',
+    'joblib',
+    'chardet',
+    'tqdm',
+    'optuna',
+    'pandas',
+    'requests',
+    'openpyxl',
+    'func-timeout',
+]
+
+[tool.setuptools.packages.find]
+where = ["modelizer"]  # list of folders that contain the packages (["."] by default)
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+"Homepage" = "https://github.com/2ral/modelizer"
+"Bug Tracker" = "https://github.com/2ral/modelizer/issues"
