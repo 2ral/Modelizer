@@ -1,0 +1,10 @@
+# IntelliJ configurations are generated mostly automatically when importing the project
+.idea/
+# A usual directory for the virtual environment for this Python component installation including its prereqisits
+.venv/
+# Local environment for use with https://direnv.net (e.g., to use the .venv binaries)
+.envrc
+
+# Python build artifacts
+__pycache__/
+*.egg-info/
