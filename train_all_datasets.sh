@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu -o pipefail
+
 INIT_SCRIPT="scripts/environment_setup.sh"
 
 train_epochs=10
