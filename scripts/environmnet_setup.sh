@@ -44,7 +44,7 @@ check_modelizer_installation() {
 
 
 
-# Initialize working direcoty
+# Initialize the working directory
 if [ $# -eq 0 ]; then
     work_dir=$(pwd)
 elif [ $# -eq 1 ]; then
@@ -68,6 +68,6 @@ if command -v python3 &> /dev/null; then
         exit 1
     fi
 else
-    echo "Python 3 is not installed. Please install Python 3.10 or"
+    echo "Python 3 is not installed. Please install Python 3.10 or higher"
     exit 1
 fi

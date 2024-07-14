@@ -5,7 +5,7 @@ version = "1.0.0"
 description = "Modelizer - is a framework for learning models from BlackBox systems using Input-Output examples"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {text = "CC BY 4.0"}
 keywords = ["deep learning", "program analysis", "machine learning", "artificial intelligence", "reverse engineering", "fuzzing", "software testing"]
 classifiers = [
     "Framework :: Modelizer",
