@@ -1,12 +1,7 @@
 """
-modelizer - A library for building tools that can automatically learn program models from I/O examples
-=====
-
-Usage
------
-
+"Modelizer - is a framework for learning models from BlackBox systems using Input-Output examples"
 """
 
 __author__ = "Tural Mammadov"
-__version__ = (0, 1, 0)
-__license__ = "MIT License"
+__version__ = (1, 0, 0)
+__license__ = "CC BY 4.0"

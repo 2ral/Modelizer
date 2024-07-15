@@ -3,11 +3,7 @@
 ## Learning Program Models using Generated Inputs
 
 The readme file and documentation for the framework are currently being updated.
-Please periodically check back for updates. We are sorry for the inconvenience, and thank you for your patience.
-
-The missing link to the replication artifact will be added soon as well.
-It was not included in the initial submission due to the size limitations of GitHub.
-
+Please periodically check back for updates.
 
 ### Required Executables
 - Python _ver. 3.10_ or higher
@@ -60,12 +56,40 @@ The framework is structured as follows:
 - `scripts/environmnet_setup.sh`: the helper bash script that sets up the environment for the experiments
 
 
-### Replication Artifact
-You can download the replication artifact from the following link:
-COMING SOON. Please check back later.
+### Replication of the Experiments
+You can download the evaluation artifact from the following link: [https://zenodo.org/records/12742928](https://zenodo.org/records/12742928)
 
-The artifact is structured as follows:
-- `train.zip`: synthetic data used for training
-- `test.zip`: synthetic and extracted real data used for testing
+The artifact contains the data, models, and evaluation results for the experiments described in the paper and is structured as follows:
+- `train.zip`: synthetic data used for the model training
+- `test.zip`: synthetic and extracted real data used for the model evaluation
 - `eval.zip`: evaluation results (experiment results and notebooks with the analysis of the results)
 - `models.zip`: all the models that were trained during the experiments
+
+The steps to replicate the experiments are as follows:
+1) Clone the repository
+2) Install the framework
+3) Download artifact from the provided link
+4) Create a new directory `datasets` next to the `modelizer` directory.
+5) Unzip the downloaded archives into the `datasets` directory.
+6) If you want to run the hyperparameter optimization, you can use the `scripts/model-setup.py` script. The script will find the optimal hyperparameters for the given input/output formats. For configuration please check the commandline arguments.  The new hyperparameters might be different from the ones used in the paper. Alternatively, you can reuse the hyperparameters that are included in the `train.zip` and move to the next step. 
+7) Execute the model training for the given subject using `scripts/model-train.py` script. The script will train the model using the synthetic data. For configuration please check the commandline arguments.
+8) Model can be fine-tuned using the `scripts/model-tune.py` script. It will not overwrite the original model but create a new instance of the model with the fine-tuned parameters.
+9) `scripts/model-eval.py` script can be used to evaluate the trained model. The script will evaluate the model using the synthetic and real data and produce evaluation results as a `.pickle` file. Please specify the directory which contains the trained models instances. By default it is `datasets/models`. It can evaluate both pre-trained and fine-tuned models at the same time. 
+10) The newly created `.pickle` file with evaluation results ca be found in the `datasets/eval` directory. There you can also find the notebooks which contain the analysis of the results our experiments. In the beginning of the every notebook the input file is specified. Please change the path to the file if you want to analyze the results of the new experiment.
+
+_More detailed instructions are in preparation._
+
+### Citation
+If you use the framework in your research, please cite the following paper:
+
+```
+@misc{mammadov2024learningprogrambehavioralmodels,
+      title={Learning Program Behavioral Models from Synthesized Input-Output Pairs}, 
+      author={Tural Mammadov and Dietrich Klakow and Alexander Koller and Andreas Zeller},
+      year={2024},
+      eprint={2407.08597},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE},
+      url={https://arxiv.org/abs/2407.08597}, 
+}
+```
