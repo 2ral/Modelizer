@@ -1,13 +1,15 @@
 # Modelizer
 
-## Learning Program Models using Generated Inputs
+## Learning Program Behavioral Models from Synthesized Input-Output Pairs
+
+This repository contains the implementation of the Modelizer framework that was presented in the paper ["Learning Program Behavioral Models from Synthesized Input-Output Pairs"](https://arxiv.org/abs/2407.08597) by Tural Mammadov, Dietrich Klakow, Alexander Koller, and Andreas Zeller.
 
 The readme file and documentation for the framework are currently being updated.
 Please periodically check back for updates.
 
 ### Required Executables
 - Python _ver. 3.10_ or higher
-- Pandoc _ver. 2.19.2_
+- Pandoc _ver. 2.19.2_ (only for the replication of the experiments)
 
 The subjects that were evaluated in the paper and their Python bindings require Python _ver. 3.10_. 
 However, if you plan to use the framework with other subjects, you can use more recent versions of Python. 
