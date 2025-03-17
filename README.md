@@ -40,6 +40,7 @@ The framework is structured as follows:
 - `modelizer/tokenizer/`: this package contains the base implementation of the mapped-tokenization algorithm as well as subject-specific tokenizers
 - `modelizer/dataset.py`: this script contains the implementation of the dataset class used to load and preprocess, as well as additional utility functions to form and process vocabularies
 - `modelizer/learner.py`: the main script that implements the learning algorithm
+- `modelizer/llm.py`: this script contains the implementation of the LLM inference and fine-tuning using unsloth.ai framework
 - `modelizer/metrics.py`: this script contains the implementation of the metrics used to evaluate the models 
 - `modelizer/optimizer.py`: this script provides the implementation hyperparameter optimization routine using the Optuna library 
 - `modelizer/trainer.py`: an example implementation of initializing the model training or tuning
@@ -52,6 +53,8 @@ The framework is structured as follows:
 - `scripts/data-generate.py`: this script can be used to generate synthetic data for the subjects 
 - `scripts/data-parse.py`: this script contains an example implementation for parsing and tokenizing new input-output pairs. The correct implementation for the tokenizers must be provided. 
 - `scripts/model-eval.py`: this script can be used to evaluate the models
+- `scripts/model-llm.py`: this script can be used to fine-tune LLMs
+- `scripts/eval-llm.py`: this script can be used to evaluate
 - `scripts/model-setup.py`: this script finds the hyperparameters for the models
 - `scripts/model-train.py`: this script trains the models
 - `scripts/model-tune.py`: this script performs the fine-tuning of trained models 
@@ -59,7 +62,7 @@ The framework is structured as follows:
 
 
 ### Replication of the Experiments
-You can download the evaluation artifact from the following link: [https://zenodo.org/records/12742928](https://zenodo.org/records/12742928)
+You can download the evaluation artifact from the following link: [https://zenodo.org/records/15041168](https://zenodo.org/records/12742928)
 
 The artifact contains the data, models, and evaluation results for the experiments described in the paper and is structured as follows:
 - `train.zip`: synthetic data used for the model training
@@ -78,8 +81,13 @@ The steps to replicate the experiments are as follows:
 8) Model can be fine-tuned using the `scripts/model-tune.py` script. It will not overwrite the original model but create a new instance of the model with the fine-tuned parameters.
 9) `scripts/model-eval.py` script can be used to evaluate the trained model. The script will evaluate the model using the synthetic and real data and produce evaluation results as a `.pickle` file. Please specify the directory which contains the trained models instances. By default it is `datasets/models`. It can evaluate both pre-trained and fine-tuned models at the same time. 
 10) The newly created `.pickle` file with evaluation results ca be found in the `datasets/eval` directory. There you can also find the notebooks which contain the analysis of the results our experiments. In the beginning of the every notebook the input file is specified. Please change the path to the file if you want to analyze the results of the new experiment.
+11) If you want to reproduce experiments with querying LLMs locally you can use the `scripts/eval-llm.py` script, or if you want to fine-tune the model using the LLM framework, you can use the `scripts/model-llm.py` script. The script will fine-tune the model using the unsloth.ai framework. The script requires the path to the model instance and the path to the synthetic data. The script will create a new instance of the model with the fine-tuned parameters. To run the experiments you need to download `eval_llm.zip` (evaluation results), `llm.zip` (training and test data for experiments with LLMs), and/or optionally `llm_fine_tuned_models.zip` (checkpoints with weights of already fine-tuned models) and unpack them into `datasets` directory. Attention these experiments require upgrading to the latest version of modelizer which will additionally install unsloth.ai framework dependency. Querying LLMs will require significantly more resources than the local model evaluation, in particular you need to have access to a GPU with at least 24 GB of video memory. 
+12) Plots can be regenerated using the notebooks in the `plots.zip` file which should be also positioned in the `datasets` directory.  
 
 _More detailed instructions are in preparation._
+
+### License
+The framework is distributed under the GNU General Public License v3.0 or later. The license can be found in the `LICENSE` file.
 
 ### Citation
 If you use the framework in your research, please cite the following paper:

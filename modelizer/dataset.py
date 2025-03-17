@@ -153,10 +153,10 @@ class TorchDataset(Dataset):
         if not isinstance(data[source][0], list):
             tokenization_policy = int("simplified" not in data_filepath.name)
             tokenizers = {data_type: tokenizers_mapping[data_type]() for data_type in data if data_type in tokenizers_mapping}
-            for data_type in tokenizers:
-                tokenizers[data_type].set_tokenization_policy(tokenization_policy)
             if "latex" in [source, target]:
                 tokenizers["latex"] = tokenizers_mapping["latex_expression"]() if "expression" in [source, target] else tokenizers_mapping["latex_mathml"]()
+            for data_type in tokenizers:
+                tokenizers[data_type].set_mapping_policy(tokenization_policy)
             assert source in tokenizers, f"No tokenizer defined for Source Data Type: {source}"
             assert target in tokenizers, f"No tokenizer defined for Target Data Type: {target}"
             data = {data_type: [tokenizers[data_type].feed(data[data_type][i]) for i in range(len(data[source]))] for data_type in tokenizers}
@@ -215,16 +215,3 @@ class TrainDataset(TorchDataset):
         test_loader = DataLoader(test_data, pin_memory=pin_memory, shuffle=shuffle, collate_fn=__create_batch__, batch_size=batch_size) if test_size > 0 else None
         return train_loader, valid_loader, test_loader
 
-
-class RetrainingDataset(Dataset):
-    def __init__(self, data: list[tuple[list[str], list[str]]], source_vocab: Vocab, target_vocab: Vocab):
-        self.data = [(convert_tokens_to_tensor(src, source_vocab), convert_tokens_to_tensor(trg, target_vocab)) for src, trg in data]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        return self.data[index][0], self.data[index][1]
-
-    def get_dataloader(self, batch_size: int = 1, shuffle: bool = False, pin_memory: bool = True) -> DataLoader:
-        return DataLoader(self, pin_memory=pin_memory, shuffle=shuffle, collate_fn=__create_batch__, batch_size=batch_size)

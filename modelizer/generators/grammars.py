@@ -12,6 +12,16 @@ def convert_and_validate(grammar: dict):
     return converted_grammar
 
 
+def remove_probabilities(grammar: dict):
+    if "{'prob':" in str(grammar):
+        for key, value in grammar.items():
+            if "{'prob':" in str(value):
+                noisy_elems = [e[0] for e in value if "{'prob':" in str(e)]
+                clean_elems = [e for e in value if "{'prob':" not in str(e)]
+                grammar[key] = clean_elems + noisy_elems
+    return grammar
+
+
 def __refine_sql_grammar__(sql_grammar: Grammar) -> Grammar:
     refined_grammar = sql_grammar.copy()
     refined_grammar.update({

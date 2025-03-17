@@ -43,7 +43,11 @@ class Scores:
         return self.__nltk_gleu__.corpus_gleu(references, predictions)
 
     def nist_score(self, y_true: list[str], y_pred: list[str]) -> float:
-        return self.__nltk_nist__.sentence_nist([y_true], y_pred)
+        try:
+            result = self.__nltk_nist__.sentence_nist([y_true], y_pred)
+        except ZeroDivisionError:
+            result = 0.0
+        return result
 
     def nist_corpus(self, data: list[tuple[list[str], list[str]]]) -> float:
         references = [[y_true] for y_true, _ in data]

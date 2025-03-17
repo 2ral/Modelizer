@@ -1,11 +1,11 @@
 [project]
 name = "modelizer"
 authors = [{name = "Tural Mammadov", email = "tural.mammadov@cispa.de"}]
-version = "1.0.0"
+version = "1.1.0"
 description = "Modelizer - is a framework for learning models from BlackBox systems using Input-Output examples"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "CC BY 4.0"}
+license = {text = "GPL-3.0"}
 keywords = ["deep learning", "program analysis", "machine learning", "artificial intelligence", "reverse engineering", "fuzzing", "software testing"]
 classifiers = [
     "Framework :: Modelizer",
@@ -22,15 +22,24 @@ dependencies = [
     'torch>=2.0.1',
     'torchtext',
     'fuzzingbook>=1.2',
-    'jiwer>=3.0.3',
-    'nltk>=3.8.1',
-    'levenshtein>=0.23.0',
+    'py-asciimath==0.3.0',
     'pylev>=1.4.0',
-    'pandoc==2.3',
+    'ziamath==0.8.1',
     'msticpy==2.9.0',
     'sqlparse==0.4.4',
     'latexify-py==0.2.0',
-    'py-asciimath==0.3.0',
+    'levenshtein>=0.23.0',
+    'mo_sql_parsing==10.469.23343',
+    'transformers[torch]',
+    'datasets',
+    'bitsandbytes',
+    'flash-attn>=2.6.3',
+    'xformers>=0.0.25',
+    'unsloth',
+    'wandb',
+    'trl',
+    'jiwer>=3.0.3',
+    'nltk>=3.8.1',
     'joblib',
     'chardet',
     'tqdm',
@@ -39,6 +48,10 @@ dependencies = [
     'requests',
     'openpyxl',
     'func-timeout',
+    'plotly',
+    'psutil',
+    'sentencepiece',
+    'python-dateutil',
 ]
 
 [tool.setuptools.packages.find]

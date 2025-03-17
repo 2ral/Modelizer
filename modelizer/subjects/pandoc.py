@@ -92,5 +92,8 @@ class PandocParser:
 
 
 def markdown2html(data: str):
-    _, html_str = PandocParser.parse_string(data)
+    html_str = PandocParser.remove_injected_html_attribute(pandoc.write(pandoc.read(data, format="markdown"), format="html"))
+    html_str = html_str.replace("<a\n", "<a ").replace("<ahref", "<a href")
+    for m in html_placeholder_split_pattern.findall(html_str):
+        html_str = html_str.replace(f"TEXT_{m[0]}TEXT_{m[1]}", f"TEXT_{m[0]} TEXT_{m[1]}")
     return html_str

@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 
 from modelizer.tokenizer.config import SPECIAL_IDX, SEED
 from modelizer.transformer import Transformer as TransformerModel
-from modelizer.utils import FileLogger, Logger, LoggingLevel, pickle_load, pickle_dump
+from modelizer.utils import Logger, AbstractLogger, LoggingLevel, pickle_load, pickle_dump
 
 
 __BASE_PARAMETERS__ = {
@@ -36,6 +36,7 @@ __BASE_PARAMETERS__ = {
     "epoch": 0,
     "model_type": None,
     "debug": False,
+    "compile_model": False,
     "disable_backend": False,
     "free_cached_memory": False,
 }
@@ -44,11 +45,13 @@ __BASE_PARAMETERS__ = {
 class AbstractLearner(ABC):
 
     def __init__(self, dataloaders: tuple[DataLoader, DataLoader, DataLoader | None] | None,
-                 vocabularies: tuple[Vocab, Vocab], model, params, state_path: str | Path | None = None, logger: FileLogger | Logger | None = None):
+                 vocabularies: tuple[Vocab, Vocab], model, params, state_path: str | Path | None = None, logger: AbstractLogger | None = None):
         assert len(dataloaders) == 3 if dataloaders is not None else True, "DataLoaders must be a tuple of 3 elements (train, valid, test)"
         self.device = initialize_device(disable_backend=params.setdefault("disable_backend", False))
         self.params = params
         self.params["model_type"] = self.__class__
+        if params.setdefault("compile_model", False):
+            model = model.compile()
         self.model = model.to(self.device)
         self.model.apply(self.initialize_weights)
         self.clip = params.setdefault('clip_gradients', None)
@@ -79,6 +82,8 @@ class AbstractLearner(ABC):
 
     def initialize_scheduler(self):
         match self.params.setdefault("learning_policy", None):
+            case "linear":
+                scheduler = torch.optim.lr_scheduler.LinearLR(self.optimizer, total_iters=4)
             case "lambda":
                 scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lambda _: 0.65 ** self.params["epoch"])
             case "multiplicative":
@@ -237,7 +242,7 @@ class Learner(AbstractLearner):
     })
 
     def __init__(self, dataloaders: tuple[DataLoader, DataLoader, DataLoader | None] | None,
-                 vocabularies: tuple[Vocab, Vocab], params: dict, state_path: str | Path | None = None, logger: FileLogger | Logger | None = None):
+                 vocabularies: tuple[Vocab, Vocab], params: dict, state_path: str | Path | None = None, logger: AbstractLogger | None = None):
         if not params.setdefault("debug", False):
             simplefilter("ignore")
 
@@ -251,6 +256,7 @@ class Learner(AbstractLearner):
         self.model.train()
         epoch_loss = 0.
         iterator_len = len(iterator)
+        assert iterator_len > 0, "Training iterator is empty"
 
         for src, trg in tqdm(iterator, total=iterator_len) if self.debug else iterator:
             src, trg = src.to(self.device), trg.to(self.device)
@@ -285,6 +291,7 @@ class Learner(AbstractLearner):
         self.model.eval()
         epoch_loss = 0.
         iterator_len = len(iterator)
+        assert iterator_len > 0, "Validation iterator is empty"
 
         for src, trg in tqdm(iterator, total=iterator_len) if self.debug else iterator:
             src, trg = src.to(self.device), trg.to(self.device)
@@ -328,7 +335,7 @@ class Learner(AbstractLearner):
         src_mask = torch.zeros((src.shape[0], src.shape[0]), device=self.device).type(torch.bool)
         src = src.view(-1, 1).to(self.device)
         output_shape = max_output_len if max_output_len else round(src.shape[0] * 1.25)
-        encoder_outputs = self.model.encode(src, src_mask).to(self.device)
+        encoder_outputs = self.model.encode(src, src_mask, self.device)
         return encoder_outputs, output_shape, src
 
     def translate(self, input_tokens: list[str], max_output_len: int = 0, eos: int = SPECIAL_IDX["<EOS>"]) -> list[str]:
@@ -401,8 +408,8 @@ def initialize_device(seed: int = SEED, disable_backend: bool = False) -> torch.
     return device
 
 
-def load_model(data_dir: str | Path, disable_backend: bool = False, load_tuned: bool = False, logger: FileLogger | Logger | None = None):
-    root_dir = Path(data_dir).resolve() if isinstance(data_dir, str) else data_dir
+def load_model(model_dir: str | Path, disable_backend: bool = False, load_tuned: bool = False, logger: AbstractLogger | None = None):
+    root_dir = Path(model_dir).resolve() if isinstance(model_dir, str) else model_dir
     assert root_dir.exists(), f"Directory {root_dir.as_posix()} does not exist."
     params = pickle_load(root_dir.joinpath("params.pickle"))
     source_vocab = torch.load(root_dir.joinpath(f"{params['source']}_vocab.pth"))
@@ -410,18 +417,19 @@ def load_model(data_dir: str | Path, disable_backend: bool = False, load_tuned: 
     params["disable_backend"] = disable_backend
     original_model_filepath = root_dir.joinpath("model.pth")
     tuned_model_filepath = root_dir.joinpath("model_tuned.pth")
-    retrained_model_filepath = root_dir.joinpath("model_retrained.pth")
-    if retrained_model_filepath.exists() and load_tuned:
-        model_filepath = retrained_model_filepath
-    elif tuned_model_filepath.exists() and load_tuned:
+    if tuned_model_filepath.exists() and load_tuned:
+        print("Loading the tuned model...")
         model_filepath = tuned_model_filepath
     else:
+        print("Loading the baseline model...")
         model_filepath = original_model_filepath
     if model_filepath.exists():
         constructor = params.setdefault("model_type", Learner)
-        return constructor(None, (source_vocab, target_vocab), params, model_filepath, logger)
+        model = constructor(None, (source_vocab, target_vocab), params, model_filepath, logger)
+        print(f"Model successfully initialized.")
+        return model
     else:
-        raise FileNotFoundError(f"Model file not found in {model_filepath.as_posix()}")
+        raise FileNotFoundError(f"Model configuration file not found in {model_filepath.as_posix()}")
 
 
 def read_model_log(data_dir: str, source: str | None = None, target: str | None = None) -> str:

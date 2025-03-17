@@ -49,11 +49,34 @@ class AbstractLogger:
         self.__logger__.critical(message)
 
 
+class NullLogger(AbstractLogger):
+    def __init__(self):
+        logger = logging.getLogger(__name__)
+        logging.disable(logging.CRITICAL)
+        super(NullLogger, self).__init__(logger)
+
+
+class ConsoleLogger(AbstractLogger):
+    def __init__(self, level: LoggingLevel = LoggingLevel.INFO):
+        logger = logging.getLogger("console_logger")
+        logger.setLevel(level.value)
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(level.value)
+        console_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)-8s | %(message)s', datefmt='%d-%m-%Y %H:%M:%S'))
+        logger.addHandler(console_handler)
+        logger.propagate = False
+        super(ConsoleLogger, self).__init__(logger)
+
+
 class Logger(AbstractLogger, metaclass=SingletonMeta):
     __instance__ = None
 
-    def __init__(self, level: LoggingLevel, root_dir: str | Path | None = None,
-                 filename: str = "debug.log", rewrite: bool = False, file_logger: bool = True, console_logger: bool = True):
+    def __init__(self, level: LoggingLevel = LoggingLevel.INFO,
+                 root_dir: str | Path | None = None,
+                 filename: str = "debug.log",
+                 rewrite: bool = False,
+                 file_logger: bool = True,
+                 console_logger: bool = True):
         if Logger.__instance__ is None:
             handlers = []
             if console_logger:
@@ -82,8 +105,11 @@ class Logger(AbstractLogger, metaclass=SingletonMeta):
 class FileLogger(AbstractLogger):
     __instances__ = {}
 
-    def __init__(self, logger_name: str, level: LoggingLevel, root_dir: str | Path | None = None,
-                 filename: str | None = None, rewrite: bool = False):
+    def __init__(self, logger_name: str = "debug.log",
+                 level: LoggingLevel = LoggingLevel.INFO,
+                 root_dir: str | Path | None = None,
+                 filename: str | None = None,
+                 rewrite: bool = False):
         assert len(logger_name) > 0, "Logger name cannot be empty"
         if logger_name not in FileLogger.__instances__:
             if root_dir is not None:
@@ -108,15 +134,28 @@ class FileLogger(AbstractLogger):
             super(FileLogger, self).__init__(FileLogger.__instances__[logger_name].__logger__)
 
 
-# Parallel processing utility function
-class Multiprocessing:
-    CORE_COUNT = cpu_count()
+class LoggerType(Enum):
+    NULL = NullLogger
+    CONSOLE = ConsoleLogger
+    FILE = FileLogger
+    ALL: Logger
+
+
+class Multiprocessing(SingletonMeta):
+    CORE_COUNT = cpu_count() - 1 if cpu_count() > 2 else cpu_count()
 
     @staticmethod
-    def parallel_run(function, data, text=None, n_jobs: int = 0, chunkify: bool = False) -> list:
-        n_jobs = n_jobs if n_jobs else Multiprocessing.CORE_COUNT
+    def parallel_run(function, data, text=None, n_jobs: int = 0, chunkify: bool = False, *, logger=None) -> list:
         chunkify = chunkify if n_jobs > 1 else False
-        data = list(Multiprocessing.chunk_generator(data, n_jobs)) if chunkify else data
+        if n_jobs == 0:
+            n_jobs = len(data) if Multiprocessing.CORE_COUNT > len(data) > 0 else Multiprocessing.CORE_COUNT
+        if chunkify:
+            data = list(Multiprocessing.chunk_generator(data, n_jobs))
+        msg = f"Running {function.__name__} in parallel with {n_jobs} jobs. Data size: {len(data)}. Core Count: {Multiprocessing.CORE_COUNT}"
+        if isinstance(logger, AbstractLogger):
+            logger.info(msg)
+        elif logger is not None:
+            print(msg)
         with Pool(n_jobs) as pool:
             if text is None:
                 result = list(pool.imap(function, data))
@@ -130,6 +169,12 @@ class Multiprocessing:
     def chunk_generator(d_list: list, elems_per_chunk: int = CORE_COUNT):
         for i in range(0, len(d_list), elems_per_chunk):
             yield d_list[i:i + elems_per_chunk]
+
+    @staticmethod
+    def chunk_generator2(d_list, n_chunks: int = CORE_COUNT):
+        k, m = divmod(len(d_list), n_chunks)
+        for i in range(n_chunks):
+            yield d_list[i * k + min(i, m):(i + 1) * k + min(i + 1, m)]
 
 
 def chunkify_list(data: list, n_chunks: int) -> list[list]:

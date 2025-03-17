@@ -24,7 +24,7 @@ class MappingPolicy(Enum):
 
 
 class AbstractTokenizer(ABC):
-    def __init__(self, grammar: dict | None = None, placeholders: tuple = ()):
+    def __init__(self, grammar: dict | None = None, placeholders: list[str] | list[str] | tuple[str] = ()):
         # Do not update self.buffer or self.__mappings__ outside the feed method
         def feed_wrapper(func):
             def wrapper(*args, **kwargs):

@@ -1,5 +1,6 @@
 import modelizer.utils as utils
 
+from enum import Enum
 from typing import Type
 from pathlib import Path
 from hashlib import sha384
@@ -12,9 +13,11 @@ from random import seed as random_seed
 
 from fuzzingbook.Timeout import Timeout
 from fuzzingbook.Grammars import Grammar
+from fuzzingbook.GrammarCoverageFuzzer import GrammarCoverageFuzzer
 from fuzzingbook.ProbabilisticGrammarFuzzer import ProbabilisticGrammarFuzzer
 from pandas import DataFrame, read_csv, concat as df_concat
 
+from modelizer.generators.grammars import remove_probabilities
 from modelizer.generators.utils import PlaceholderProcessor, placeholder_updator
 
 
@@ -22,9 +25,12 @@ def __fuzz__(fuzzing_params: tuple[Grammar, int, int, int, int]):
     random_seed(datetime.now().timestamp())
     fuzzing_results = set()
     grammar, min_nonterminals, max_nonterminals, fuzzing_rounds, fuzzing_timeout = fuzzing_params
-    grammar_fuzzer = ProbabilisticGrammarFuzzer(grammar=grammar,
-                                                min_nonterminals=min_nonterminals,
-                                                max_nonterminals=max_nonterminals)
+    if min_nonterminals < 0 or max_nonterminals < 0:
+        grammar_fuzzer = GrammarCoverageFuzzer(grammar=remove_probabilities(grammar))
+    else:
+        grammar_fuzzer = ProbabilisticGrammarFuzzer(grammar=grammar,
+                                                    min_nonterminals=min_nonterminals,
+                                                    max_nonterminals=max_nonterminals)
     for _ in range(fuzzing_rounds):
         try:
             with Timeout(fuzzing_timeout):
@@ -48,8 +54,8 @@ def fuzzer_generator(fuzzing_rounds: int,
     generated = []
     partition_files = 0
     attempts = fuzzing_attempts
-
-    if partition:
+    fuzzing_with_probabilities = fuzzing_params[1] < 0 and fuzzing_params[2] < 0
+    if partition and fuzzing_with_probabilities:
         d = 4 if fuzzing_rounds <= 10000000 else fuzzing_rounds // 1000000
         partition_size = math_ceil(fuzzing_rounds / d)
         logger.info(f"Maximum partition size: {partition_size}")
@@ -58,8 +64,9 @@ def fuzzer_generator(fuzzing_rounds: int,
 
     while len(generated) < fuzzing_rounds:
         total_remaining_files = fuzzing_rounds - len(generated)
-        logger.info(f"{total_remaining_files} strings left to generate | "
-                    f"Max-Nonterminals: {fuzzing_params[2]} | Attempts left: {attempts}")
+        logger.info(f"{total_remaining_files} strings left to generate")
+        if fuzzing_with_probabilities:
+            logger.info(f"Max-Nonterminals: {fuzzing_params[2]} | Attempts left: {attempts}")
 
         if partition:
             partition_remaining_files = partition_size - partition_files
@@ -86,7 +93,7 @@ def fuzzer_generator(fuzzing_rounds: int,
                 if len(generated) == fuzzing_rounds or partition_files == partition_size:
                     break
 
-        if attempts <= 0 or partition_files == partition_size or records_before == len(generated):
+        if fuzzing_with_probabilities and attempts <= 0 or partition_files == partition_size or records_before == len(generated):
             attempts = fuzzing_attempts
             fuzzing_params[1] = fuzzing_params[2] - 5
             fuzzing_params[2] += 5
@@ -146,10 +153,15 @@ class AbstractFuzzer(ABC):
 
     def fuzz(self, fuzzing_rounds: int = 1, max_nonterminals: int = 20, partition: bool = False) -> str:
         # Generating
-        min_nonterminals = 10 if max_nonterminals - 10 <= 0 else max_nonterminals - 10
-        max_nonterminals = min_nonterminals + 10 if max_nonterminals < min_nonterminals else max_nonterminals
         start_time = datetime.now()
         self.logger.info(f"Task: {self.task} Generation | Records to generate: {fuzzing_rounds}")
+        if max_nonterminals < 0:
+            min_nonterminals = max_nonterminals
+            self.logger.info("Gathering formulas with GrammarCoverageFuzzer")
+        else:
+            self.logger.info("Gathering formulas with ProbabilisticGrammarFuzzer")
+            min_nonterminals = 10 if max_nonterminals - 10 <= 0 else max_nonterminals - 10
+            max_nonterminals = min_nonterminals + 10 if max_nonterminals < min_nonterminals else max_nonterminals
         fuzzing_params = [self.grammar, min_nonterminals, max_nonterminals, 0, self.fuzzing_timout]
         results, fuzzing_params = fuzzer_generator(fuzzing_rounds, fuzzing_params, self.__hashes_fh__, self.logger, partition)
         results = self.update_placeholders(results)
@@ -207,6 +219,9 @@ class AbstractFuzzer(ABC):
         self.logger.info(f"Dataset saved at {self.__dataset_fh__.as_posix()}")
         self.logger.info(f"Overall Duration: {datetime.now() - start_time}")
         return self.__dataset_fh__.as_posix()
+
+    def coverage_fuzz(self, fuzzing_rounds: int = 1) -> str:
+        return self.fuzz(fuzzing_rounds, max_nonterminals=-1)
 
     def update_placeholders(self, subjects: list[str]) -> list[str]:
         return placeholder_updator(subjects, self.markers, self.__placeholder_factory__) if self.markers is not None else subjects

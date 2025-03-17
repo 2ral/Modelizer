@@ -45,7 +45,7 @@ class ParameterSearchOptimizer:
             "num_decoder_layers": [1, 2, 3, 4, 5],
             "clip_gradients": [None, 1.0],
             "dropout": [0.0, 0.1],
-            "learning_policy": [None, "lambda", "multiplicative", "cosine", "step", "exponential"],
+            "learning_policy": [None, "linear", "lambda", "multiplicative", "cosine", "step", "exponential"],
             "learning_rate": [0.0001, 0.0005, 0.001, 0.005, 0.01],
             "weight_decay": [0.0001, 0.0005, 0.001, 0.005, 0.01],
         }
@@ -152,7 +152,7 @@ class ParameterSearchOptimizer:
         self.use_extra_test_samples = use_extra_test_samples
 
         pruner = optuna.pruners.MedianPruner(n_startup_trials=self.start_up, n_warmup_steps=self.warm_up)
-        study = optuna.create_study(direction="minimize", pruner=pruner, study_name=self.name)
+        study = optuna.create_study(direction="minimize", pruner=pruner, study_name=self.name, sampler=optuna.samplers.GridSampler(self.config))
         if self.debug_mode:
             self.logger.info(f"Searching for optimal {study_type} hyperparameters | {self.source} -> {self.target} | Type: {token_type}")
             self.logger.info(f"Total Trials: {self.trials} | Start-up Trials: {self.start_up} | Warm-up Trials: {self.warm_up}")

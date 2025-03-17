@@ -17,7 +17,7 @@ if __name__ == "__main__":
     params_dir = train_data_dir.parent.joinpath("hyperparameters")
     root_dir = train_data_dir.joinpath("models").joinpath(f"modelizer_simplified_{source}_{target}" if args.simplified else f"modelizer_{source}_{target}")
     root_dir.mkdir(parents=True, exist_ok=True)
-    logger = Logger(LoggingLevel.DEBUG if args.debug else LoggingLevel.INFO, root_dir.as_posix())
+    logger = Logger(LoggingLevel.DEBUG if args.enable_debug_logging else LoggingLevel.INFO, root_dir.as_posix())
     logger.info(f"Task: Model Training | Date and Time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     params = Learner.HYPERPARAMETERS.copy()
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     params["epoch"] = 0
     params["source"] = source
     params["target"] = target
-    params["debug"] = args.debug
+    params["debug"] = args.enable_debug_logging
     params["disable_backend"] = args.cpu
     params["free_cached_memory"] = args.clear
     params["pos_encoding_size"] = args.pos_encoding_size

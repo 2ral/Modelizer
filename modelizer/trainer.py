@@ -1,9 +1,8 @@
 from math import isclose
 from pathlib import Path
 from datetime import datetime
-from multiprocessing import Process, Value, Array, set_start_method
-
 from modelizer.learner import Learner, load_model
+from multiprocessing import Process, Value, Array, set_start_method
 from modelizer.dataset import TrainDataset, TorchDataset, load_vocabs, save_vocabs
 from modelizer.utils import FileLogger, LoggingLevel, infer_subject, pickle_load, parse_model_name, chunkify_list
 
