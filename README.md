@@ -62,7 +62,7 @@ The framework is structured as follows:
 
 
 ### Replication of the Experiments
-You can download the evaluation artifact from the following link: [https://zenodo.org/records/15041168](https://zenodo.org/records/12742928)
+You can download the evaluation artifact from the following link: [https://zenodo.org/records/15041168](https://zenodo.org/records/15041168)
 
 The artifact contains the data, models, and evaluation results for the experiments described in the paper and is structured as follows:
 - `train.zip`: synthetic data used for the model training
