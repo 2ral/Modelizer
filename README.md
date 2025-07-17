@@ -2,7 +2,7 @@
 
 ## Learning Program Behavioral Models from Synthesized Input-Output Pairs
 
-This repository contains the implementation of the Modelizer framework that was presented in the paper ["Learning Program Behavioral Models from Synthesized Input-Output Pairs"](https://arxiv.org/abs/2407.08597) by Tural Mammadov, Dietrich Klakow, Alexander Koller, and Andreas Zeller.
+This repository contains the implementation of the Modelizer framework that was presented in the paper ["Learning Program Behavioral Models from Synthesized Input-Output Pairs"](https://doi.org/10.1145/3748720) by Tural Mammadov, Dietrich Klakow, Alexander Koller, and Andreas Zeller.
 
 The readme file and documentation for the framework are currently being updated.
 Please periodically check back for updates.
@@ -84,7 +84,6 @@ The steps to replicate the experiments are as follows:
 11) If you want to reproduce experiments with querying LLMs locally you can use the `scripts/eval-llm.py` script, or if you want to fine-tune the model using the LLM framework, you can use the `scripts/model-llm.py` script. The script will fine-tune the model using the unsloth.ai framework. The script requires the path to the model instance and the path to the synthetic data. The script will create a new instance of the model with the fine-tuned parameters. To run the experiments you need to download `eval_llm.zip` (evaluation results), `llm.zip` (training and test data for experiments with LLMs), and/or optionally `llm_fine_tuned_models.zip` (checkpoints with weights of already fine-tuned models) and unpack them into `datasets` directory. Attention these experiments require upgrading to the latest version of modelizer which will additionally install unsloth.ai framework dependency. Querying LLMs will require significantly more resources than the local model evaluation, in particular you need to have access to a GPU with at least 24 GB of video memory. 
 12) Plots can be regenerated using the notebooks in the `plots.zip` file which should be also positioned in the `datasets` directory.  
 
-_More detailed instructions are in preparation._
 
 ### License
 The framework is distributed under the GNU General Public License v3.0 or later. The license can be found in the `LICENSE` file.
@@ -93,13 +92,18 @@ The framework is distributed under the GNU General Public License v3.0 or later.
 If you use the framework in your research, please cite the following paper:
 
 ```
-@misc{mammadov2024learningprogrambehavioralmodels,
-      title={Learning Program Behavioral Models from Synthesized Input-Output Pairs}, 
-      author={Tural Mammadov and Dietrich Klakow and Alexander Koller and Andreas Zeller},
-      year={2024},
-      eprint={2407.08597},
-      archivePrefix={arXiv},
-      primaryClass={cs.SE},
-      url={https://arxiv.org/abs/2407.08597}, 
+@article{modelizer2025,
+    author = {Mammadov, Tural and Klakow, Dietrich and Koller, Alexander and Zeller, Andreas},
+    title = {Learning Program Behavioral Models from Synthesized Input-Output Pairs},
+    year = {2025},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    issn = {1049-331X},
+    url = {https://doi.org/10.1145/3748720},
+    doi = {10.1145/3748720},
+    note = {Just Accepted},
+    journal = {ACM Trans. Softw. Eng. Methodol.},
+    month = jul,
+    keywords = {Software Testing, Mocking, Deep Learning}
 }
 ```
