@@ -1,109 +1,113 @@
 # Modelizer
+An open-source framework for training program-specific models from scratch or fine-tuning existing models using your own data.
 
-## Learning Program Behavioral Models from Synthesized Input-Output Pairs
-
-This repository contains the implementation of the Modelizer framework that was presented in the paper ["Learning Program Behavioral Models from Synthesized Input-Output Pairs"](https://doi.org/10.1145/3748720) by Tural Mammadov, Dietrich Klakow, Alexander Koller, and Andreas Zeller.
-
-The readme file and documentation for the framework are currently being updated.
-Please periodically check back for updates.
-
-### Required Executables
-- Python _ver. 3.10_ or higher
-- Pandoc _ver. 2.19.2_ (only for the replication of the experiments)
-
-The subjects that were evaluated in the paper and their Python bindings require Python _ver. 3.10_. 
-However, if you plan to use the framework with other subjects, you can use more recent versions of Python. 
+#### Required Executables
+ - Python _ver. 3.10_ or higher
 
 ### Installation
-The framework is distributed as a Python module. 
-To install it locally please repeat the following steps:
-1) pull the repository
-2) change your directory to the root of the repository
-3) run the following command: ```python3 -m pip install -e .```
+###### Installation from source:
+1. Clone the repository:
+2. Create and activate a virtual environment with Python 3.10 or higher:
+3. Navigate to the cloned repository
+4. Execute the installation command `pip install -e .`
 
-This will install the module in the editable mode, so you can modify the code and see the changes immediately.
+### Common Installation Errors
 
-#### Installation Errors
+#### ModuleNotFoundError: No module named 'torch'
 
-*ERROR: Could not build wheels for pygraphviz, which is required to install pyproject.toml-based projects*
+Fix: run one of the commands depending on your Operating System type in the terminal and restart the installation:
 
-The current Fuzzingbook Python module installation requires a PyGraphviz module, which further requires the installation of additional libraries.
-
-If you encounter an error during installation, please follow the instructions listed in the [PyGrahviz documentation](https://pygraphviz.github.io/documentation/stable/install.html).
-
-### Framework Structure
-The framework is structured as follows:
-
-`modelizer/` - the Python module that contains the implementation of the framework
-- `modelizer/generators/`: this package contains the base class input generator as well as subject-specific implementations used in our experiments 
-- `modelizer/subjects/`:  this package contains the bindings for the subjects that were evaluated in the paper
-- `modelizer/tokenizer/`: this package contains the base implementation of the mapped-tokenization algorithm as well as subject-specific tokenizers
-- `modelizer/dataset.py`: this script contains the implementation of the dataset class used to load and preprocess, as well as additional utility functions to form and process vocabularies
-- `modelizer/learner.py`: the main script that implements the learning algorithm
-- `modelizer/llm.py`: this script contains the implementation of the LLM inference and fine-tuning using unsloth.ai framework
-- `modelizer/metrics.py`: this script contains the implementation of the metrics used to evaluate the models 
-- `modelizer/optimizer.py`: this script provides the implementation hyperparameter optimization routine using the Optuna library 
-- `modelizer/trainer.py`: an example implementation of initializing the model training or tuning
-- `modelizer/transformer.py`: this script provides the implementation of the transformer model using the PyTorch library
-- `modelizer/utils.py`: supplementary script to simplify data loading, handling, and logging
-
-`scripts/` - the helper scripts that assist in running experiments. It can be modified to run experiments on different subjects.
-- `scripts/compute-params.py`: this script retrieves the total number of trainable parameters in the model
-- `scripts/compute-scores.py`: this script can help to compute the scores for the models. Attention! Significant computational resources can be required if executed on more than one core.
-- `scripts/data-generate.py`: this script can be used to generate synthetic data for the subjects 
-- `scripts/data-parse.py`: this script contains an example implementation for parsing and tokenizing new input-output pairs. The correct implementation for the tokenizers must be provided. 
-- `scripts/model-eval.py`: this script can be used to evaluate the models
-- `scripts/model-llm.py`: this script can be used to fine-tune LLMs
-- `scripts/eval-llm.py`: this script can be used to evaluate
-- `scripts/model-setup.py`: this script finds the hyperparameters for the models
-- `scripts/model-train.py`: this script trains the models
-- `scripts/model-tune.py`: this script performs the fine-tuning of trained models 
-- `scripts/environmnet_setup.sh`: the helper bash script that sets up the environment for the experiments
+- Windows: `pip3 install torch --index-url https://download.pytorch.org/whl/cu128`
+- Linux and MacOS: `pip install torch`
 
 
-### Replication of the Experiments
-You can download the evaluation artifact from the following link: [https://zenodo.org/records/15041168](https://zenodo.org/records/15041168)
+#### /lib/x86_64-linux-gnu/libstdc++.so.6: version `CXXABI_1.3.15' not found 
 
-The artifact contains the data, models, and evaluation results for the experiments described in the paper and is structured as follows:
-- `train.zip`: synthetic data used for the model training
-- `test.zip`: synthetic and extracted real data used for the model evaluation
-- `eval.zip`: evaluation results (experiment results and notebooks with the analysis of the results)
-- `models.zip`: all the models that were trained during the experiments
-
-The steps to replicate the experiments are as follows:
-1) Clone the repository
-2) Install the framework
-3) Download artifact from the provided link
-4) Create a new directory `datasets` next to the `modelizer` directory.
-5) Unzip the downloaded archives into the `datasets` directory.
-6) If you want to run the hyperparameter optimization, you can use the `scripts/model-setup.py` script. The script will find the optimal hyperparameters for the given input/output formats. For configuration please check the commandline arguments.  The new hyperparameters might be different from the ones used in the paper. Alternatively, you can reuse the hyperparameters that are included in the `train.zip` and move to the next step. 
-7) Execute the model training for the given subject using `scripts/model-train.py` script. The script will train the model using the synthetic data. For configuration please check the commandline arguments.
-8) Model can be fine-tuned using the `scripts/model-tune.py` script. It will not overwrite the original model but create a new instance of the model with the fine-tuned parameters.
-9) `scripts/model-eval.py` script can be used to evaluate the trained model. The script will evaluate the model using the synthetic and real data and produce evaluation results as a `.pickle` file. Please specify the directory which contains the trained models instances. By default it is `datasets/models`. It can evaluate both pre-trained and fine-tuned models at the same time. 
-10) The newly created `.pickle` file with evaluation results ca be found in the `datasets/eval` directory. There you can also find the notebooks which contain the analysis of the results our experiments. In the beginning of the every notebook the input file is specified. Please change the path to the file if you want to analyze the results of the new experiment.
-11) If you want to reproduce experiments with querying LLMs locally you can use the `scripts/eval-llm.py` script, or if you want to fine-tune the model using the LLM framework, you can use the `scripts/model-llm.py` script. The script will fine-tune the model using the unsloth.ai framework. The script requires the path to the model instance and the path to the synthetic data. The script will create a new instance of the model with the fine-tuned parameters. To run the experiments you need to download `eval_llm.zip` (evaluation results), `llm.zip` (training and test data for experiments with LLMs), and/or optionally `llm_fine_tuned_models.zip` (checkpoints with weights of already fine-tuned models) and unpack them into `datasets` directory. Attention these experiments require upgrading to the latest version of modelizer which will additionally install unsloth.ai framework dependency. Querying LLMs will require significantly more resources than the local model evaluation, in particular you need to have access to a GPU with at least 24 GB of video memory. 
-12) Plots can be regenerated using the notebooks in the `plots.zip` file which should be also positioned in the `datasets` directory.  
-
-
-### License
-The framework is distributed under the GNU General Public License v3.0 or later. The license can be found in the `LICENSE` file.
-
-### Citation
-If you use the framework in your research, please cite the following paper:
-
+##### If you are using conda, run the following command in the terminal and restart the installation:
 ```
-@article{modelizer2025,
-    author = {Mammadov, Tural and Klakow, Dietrich and Koller, Alexander and Zeller, Andreas},
-    title = {Learning Program Behavioral Models from Synthesized Input-Output Pairs},
-    year = {2025},
-    publisher = {Association for Computing Machinery},
-    address = {New York, NY, USA},
-    issn = {1049-331X},
-    url = {https://doi.org/10.1145/3748720},
-    doi = {10.1145/3748720},
-    note = {Just Accepted},
-    journal = {ACM Trans. Softw. Eng. Methodol.},
-    month = jul,
-    keywords = {Software Testing, Mocking, Deep Learning}
-}
+conda install -c conda-forge libstdcxx-ng
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+```
+##### System-wide fix for Linux OS:
+```
+sudo apt update
+sudo apt install libstdc++6
+```
+
+#### OSError: [Errno 2] No such file or directory on Windows OS
+Fix: run the following command in the Elevated PowerShell terminal and restart the installation:
+
+`New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force`
+
+#### clang++: error: unsupported option '-fopenmp' during installation of xformers
+If this problem occurs on MacOS install llvm from HomeBrew:
+```
+brew install llvm
+```
+
+Then update environment variables:
+```
+export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+export CC="/opt/homebrew/opt/llvm/bin/clang"
+export CXX="/opt/homebrew/opt/llvm/bin/clang++"
+export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+```
+Please use the correct HomeBrew path.
+
+
+### Common Runtime Errors
+
+#### NotImplementedError: The operator 'aten::_nested_tensor_from_mask_left_aligned' is not currently implemented for the MPS device.
+This error occurs when using the MPS device on MacOS. There are two possible solutions: 
+1. Use CPU device instead of MPS. To do this, set force_cpu=True in the config file. This option will significantly slow down the training process.
+2. Specify the additional environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` before running the script. This option will slow down the training process, but it will allow you to use the MPS device. An example code snippet comes below.
+```import os
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+```
+
+#### Repository Content:
+Here is the structure of the repository with main directories and files used in the project:
+
+- /src/modelizer - main framework directory with all the code files
+- /scripts - directory with scripts for training, testing and repairing models
+- /pyproject.toml - file with package metadata and dependencies
+- /Dockerfile - file with instructions to build the Docker container
+- /LICENSE.txt - license file
+- /README.md - this file
+
+#### Helper commands to run training and repair:
+To run the training start the container and execute the following command:
+```
+python scripts/train_model.py --subject <subject_name> --dataset <dataset_path> --source <source_name> --target <target_name> --trials 250 --train_epochs 100 --test_epochs 5 --test_size 10000 --batch-size 1 --fast
+```
+Attention! <source_name> and <target_name> should be the same as in the dataset.
+
+To get help on all the available options for training and repair scripts, run the following command:
+```
+python scripts/train_model.py --help
+```
+
+To run the self-repair evaluation start the container and execute the following command:
+```
+python scripts/model_repair.py --subject <subject_name> --num-samples 0 --trials 25 --epochs 5 --root-dir <root_dir>
+```
+where <root_dir> is the directory with the trained model and the dataset, e.g. `artifacts/bc`. The `num-samples` option specifies the number of samples to be repaired. If it is set to 0, all samples from the test set will be repaired. The `trials` option specifies the number of repair trials for each sample, and the `epochs` option specifies the number of epochs for each repair trial.
+
+To get help on all the available options for the repair script, run the following command:
+```
+python scripts/model_repair.py --help
+```
+
+#### Docker Container:
+We provide a Docker container with all the dependencies pre-installed to simplify the installation process and avoid potential issues with dependency conflicts. 
+The container is available on the Docker Hub repository which you can download using the following command:
+```
+docker pull turalmammadov/modelizer:latest
+```
+
+#### Running the container:
+Run the container with the following command:
+```
+docker run --gpus all -it --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 turalmammadov/modelizer
 ```

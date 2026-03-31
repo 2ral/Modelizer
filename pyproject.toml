@@ -1,64 +1,55 @@
 [project]
 name = "modelizer"
-authors = [{name = "Tural Mammadov", email = "tural.mammadov@cispa.de"}]
-version = "1.1.0"
-description = "Modelizer - is a framework for learning models from BlackBox systems using Input-Output examples"
+authors = [{name = "Tural Mammadov", email = "turalevro@gmail.com"}]
+version = "2.0.0"
+description = "A library for building tools that can automatically learn program models from I/O examples"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "GPL-3.0"}
-keywords = ["deep learning", "program analysis", "machine learning", "artificial intelligence", "reverse engineering", "fuzzing", "software testing"]
+license = {text = "GNU GPLv3 or later"}
+keywords = ["deep learning", "program analysis", "machine learning", "artificial intelligence", "reverse engineering"]
 classifiers = [
     "Framework :: Modelizer",
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: Analysis",
-    "Topic :: Software Development :: Software Testing",
     "Topic :: Software Development :: Reverse Engineering",
+    "Topic :: Software Development :: Behavior Extraction",
+    "Topic :: Software Development :: Machine Learning",
 ]
 
 dependencies = [
-    'pandoc==2.3',
-    'torch>=2.0.1',
-    'torchtext',
-    'fuzzingbook>=1.2',
-    'py-asciimath==0.3.0',
-    'pylev>=1.4.0',
-    'ziamath==0.8.1',
-    'msticpy==2.9.0',
-    'sqlparse==0.4.4',
-    'latexify-py==0.2.0',
-    'levenshtein>=0.23.0',
-    'mo_sql_parsing==10.469.23343',
-    'transformers[torch]',
-    'datasets',
-    'bitsandbytes',
-    'flash-attn>=2.6.3',
-    'xformers>=0.0.25',
-    'unsloth',
-    'wandb',
-    'trl',
-    'jiwer>=3.0.3',
-    'nltk>=3.8.1',
-    'joblib',
-    'chardet',
+    # General
     'tqdm',
-    'optuna',
+    'wandb',
+    'numpy',
+    'xxhash',
     'pandas',
-    'requests',
-    'openpyxl',
-    'func-timeout',
-    'plotly',
     'psutil',
-    'sentencepiece',
-    'python-dateutil',
+    'requests',
+    'cloudpickle',
+    'func-timeout',
+    # Metrics
+    'nltk',
+    'jiwer',
+    'levenshtein',
+    # Modeling
+    'torch>=2.0',
+    'optuna',
+    'hf_xet',
+    'tokenizers',
+    'bitsandbytes',
+    'x-transformers',
+    'transformers[torch]',
 ]
 
-[tool.setuptools.packages.find]
-where = ["modelizer"]  # list of folders that contain the packages (["."] by default)
+[project.optional-dependencies]
+cuda = [
+    'flash-attn',
+]
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68",  "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.urls]
