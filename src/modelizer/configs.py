@@ -80,3 +80,18 @@ XTR_PARAMETERS = {
     "learning_rate": BASE_LEARNING_RATE,
     "weight_decay": BASE_WEIGHT_DECAY,
 }
+
+XTR_DECODER_PARAMETERS = {
+    "embedding_size": BASE_EMBEDDING_SIZES,
+    "num_layers": BASE_NUM_LAYERS,
+    "num_heads": BASE_NUM_HEADS,
+    "dropout": BASE_DROPOUT_RATES,
+    "clip_grad": BASE_CLIP_GRAD_RATES,
+    "layer_dropout": BASE_DROPOUT_RATES,
+    "attn_dropout": BASE_DROPOUT_RATES,
+    "ff_dropout": BASE_DROPOUT_RATES,
+    "optimizer": BASE_OPTIMIZERS,
+    "scheduler": BASE_SCHEDULERS,
+    "learning_rate": BASE_LEARNING_RATE,
+    "weight_decay": BASE_WEIGHT_DECAY,
+}

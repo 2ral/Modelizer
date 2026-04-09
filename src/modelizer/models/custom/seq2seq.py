@@ -53,6 +53,7 @@ class EncoderDecoderConfig(CustomConfig):
                  eps: float = configs.EPS,
                  clip_grad: float = configs.CLIP_GRAD,
                  validation_fraction: float = configs.VALIDATION_FRACTION,
+                 validation_overlap: bool = False,
                  checkpoint_interval: int = configs.CHECKPOINT_INTERVAL,
                  use_flash: bool = True,
                  compile_model: bool = False,
@@ -106,6 +107,7 @@ class EncoderDecoderConfig(CustomConfig):
         :param eps: Epsilon parameter for the optimizer. Default is configs.EPS.
         :param clip_grad: Gradient clipping value. Default is configs.CLIP_GRAD.
         :param validation_fraction: Training dataset fraction used to validate the model during training. Default is configs.VALIDATION_FRACTION.
+        :param validation_overlap: If True, the validation set will overlap with the training set. Default is False.
         :param checkpoint_interval: Interval for saving checkpoints. Default is configs.CHECKPOINT_INTERVAL.
         :param use_vanilla: If True, use the vanilla implementation of Transformer model. Default is False.
         :param use_flash: If True, use the FLASH attention mechanism in Transformer. Default is True. Affects legacy models.

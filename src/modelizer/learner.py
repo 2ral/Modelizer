@@ -9,7 +9,7 @@ from modelizer.models.optimizer import Optimizer
 from modelizer.models.abstract import BaseConfig
 from modelizer.configs import MODELIZER_GENERATOR_CACHE_SIZE
 from modelizer.models.legacy import LegacyConfig, LegacyModel
-from modelizer.models.custom import EncoderDecoderModel, EncoderDecoderConfig
+from modelizer.models.custom import DecoderModel, DecoderConfig, EncoderDecoderModel, EncoderDecoderConfig
 from modelizer.utils import Logger, LoggerConfig, Pickle, MemoryTracker, MemInfo, load_module
 
 
@@ -61,6 +61,9 @@ class Modelizer:
         elif isinstance(config, LegacyConfig):
             assert tokenizer is not None, "Tokenizer must be provided for legacy encoder-decoder model"
             self.engine = LegacyModel(config, tokenizer, output_tokenizer, logger, force_cpu)
+        elif isinstance(config, DecoderConfig):
+            assert tokenizer is not None, "Tokenizer must be provided for custom decoder model"
+            self.engine = DecoderModel(config, tokenizer, logger, force_cpu)
         elif isinstance(config, EncoderDecoderConfig):
             assert tokenizer is not None, "Tokenizer must be provided for custom encoder-decoder model"
             self.engine = EncoderDecoderModel(config, tokenizer, output_tokenizer, logger, force_cpu)
@@ -128,7 +131,7 @@ class Modelizer:
         engine_type, stats = repr(self.engine).split(": ", 1)
         return f"{self.__class__.__name__}: {self.__hash__()} -> {engine_type}: {stats}"
 
-    def generate(self, input_data: str | list[str], max_length: int = 256, **kwargs) -> str | list[str]:
+    def generate(self, input_data: str | list[str], max_length: Optional[int] = 256, **kwargs) -> str | list[str]:
         """
         Generate output from the input data.
         :param input_data: Vector of input data or a single string
@@ -136,6 +139,8 @@ class Modelizer:
         :param kwargs: Additional keyword arguments.
         :return: Generated output as a string or a vector
         """
+        if max_length is None:
+            max_length = self.engine.output_tokenizer.max_sequence_length
         if isinstance(input_data, list):
             input_data = tuple(input_data)
         return self.__generate__(input_data=input_data, max_length=max_length, **kwargs)

@@ -14,7 +14,7 @@ from modelizer.models.abstract import BaseConfig, Hyperparameters
 from modelizer.utils import MemInfo, Logger, MemoryTracker, StoppableThread
 
 from modelizer.models.legacy import LegacyConfig
-from modelizer.models.custom import EncoderDecoderConfig
+from modelizer.models.custom import DecoderConfig, EncoderDecoderConfig
 
 
 
@@ -36,6 +36,13 @@ class Optimizer:
                 raise ValueError(error_msg)
             from modelizer.models.legacy import LegacyModel
             self._factory = LegacyModel
+        elif isinstance(config, DecoderConfig):
+            if tokenizer is None:
+                error_msg = "At least Input Tokenizer must be provided for custom decoder model"
+                self._logger.error(error_msg)
+                raise ValueError(error_msg)
+            from modelizer.models.custom import DecoderModel
+            self._factory = DecoderModel
         elif isinstance(config, EncoderDecoderConfig):
             if tokenizer is None:
                 error_msg = "At least Input Tokenizer must be provided for custom encoder-decoder model"

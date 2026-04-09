@@ -51,10 +51,10 @@ class LegacyConfig(BaseConfig):
                  wandb_token: Optional[str] = None,
                  seed: int = configs.SEED,
                  validation_fraction: Optional[float] = configs.VALIDATION_FRACTION,
+                 validation_overlap: bool = False,
                  shuffle_train_data: bool = True,
                  pin_dataloader_memory: bool = False,
                  free_cached_memory: bool = False,
-                 use_distributed_sampler: bool = False,
                  reduce_spaces: bool = False,
                  metadata: Optional[dict[str, Any]] = None, **_):
         """
@@ -88,15 +88,15 @@ class LegacyConfig(BaseConfig):
         :param wandb_token: (Optional) The Weights and Biases API token.
         :param seed: The seed value for reproducibility.
         :param validation_fraction: Fraction of data to use for validation (rest for Training). Could be None to use all data for training and validation. Default is configs.VALIDATION_FRACTION.
+        :param validation_overlap: If True, the validation set will overlap with the training set. Default is False.
         :param shuffle_train_data: If True, shuffle training data.
         :param pin_dataloader_memory: If True, pin memory in DataLoader.
         :param free_cached_memory: If True, free cached memory after each epoch.
-        :param use_distributed_sampler: If True, use distributed sampler in DataLoader.
         :param reduce_spaces: If True, the model will reduce spaces in the input data.
         :param metadata: Optional metadata dictionary to store additional information about the model.
         """
-        super().__init__(output_dir, source, target, backward, False, validation_fraction, seed,
-                         wandb_token, force_cpu, total_save_limit, free_cached_memory, reduce_spaces, metadata)
+        super().__init__(output_dir, source, target, backward, False, validation_fraction, validation_overlap,
+                         seed, wandb_token, force_cpu, total_save_limit, free_cached_memory, reduce_spaces, metadata)
         self._source_vocab_size = source_vocab_size
         self._target_vocab_size = target_vocab_size
         self._embedding_size = embedding_size
@@ -117,7 +117,6 @@ class LegacyConfig(BaseConfig):
         self._source_max_len = source_max_len
         self._target_max_len = target_max_len
 
-        self._use_distributed_sampler = use_distributed_sampler
         self._shuffle_train_data = shuffle_train_data
         self._pin_dataloader_memory = pin_dataloader_memory
 
@@ -249,15 +248,6 @@ class LegacyConfig(BaseConfig):
     def shuffle_train_data(self, value: bool):
         assert isinstance(value, bool), "shuffle_train_data must be a boolean"
         self._shuffle_train_data = value
-
-    @property
-    def use_distributed_sampler(self) -> bool:
-        return self._use_distributed_sampler
-
-    @use_distributed_sampler.setter
-    def use_distributed_sampler(self, value: bool):
-        assert isinstance(value, bool), "use_distributed_sampler must be a boolean"
-        self._use_distributed_sampler = value
 
     @property
     def free_cached_memory(self) -> bool:
@@ -515,10 +505,12 @@ class LegacyModel(BaseModel):
 
         self._logger.info("Preparing DataLoader...")
         dataset = TorchDataset(dataframe, self.config.source, self.config.target, self.tokenizer, self.output_tokenizer)
-        train_dataloader, valid_dataloader = dataset.get_dataloaders(self.config.validation_steps_or_fraction, batch_size=batch_size,
+        train_dataloader, valid_dataloader = dataset.get_dataloaders(self.config.validation_steps_or_fraction,
+                                                                     batch_size=batch_size,
                                                                      pin_memory=self.config.pin_dataloader_memory,
-                                                                     use_distributed_sampler=self.config.use_distributed_sampler,
-                                                                     shuffle=self.config.shuffle_train_data, seed=self.config.seed)
+                                                                     validation_overlap=self.config.validation_overlap,
+                                                                     shuffle=self.config.shuffle_train_data,
+                                                                     seed=self.config.seed)
         self._logger.info("Training started...")
         start_time = datetime.now()
         best_train_loss = float("inf")

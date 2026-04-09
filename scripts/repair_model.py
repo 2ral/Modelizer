@@ -1,15 +1,25 @@
 # This script uses feedback loop to repair trained Modelizer models.
+import argparse
 
-from pathlib import Path
-from datetime import datetime
 from pandas import read_csv
+from datetime import datetime
 
-from sys import path as sys_path
-
-sys_path[0] = Path(__file__).resolve().parent.parent.as_posix()
+if __name__ == "__main__":
+    from pathlib import Path
+    from sys import path as sys_path
+    sys_path[0] = Path(__file__).resolve().parent.parent.as_posix()
 
 from modelizer.repairer import Repairer
 from modelizer.utils import Pickle, DataHandlers
+
+
+try:
+    from modelizer.generators.implementations import init_subject
+except (ImportError, ModuleNotFoundError):
+    from modelizer.generators.subjects import BaseSubject
+
+    def init_subject(name: str) -> BaseSubject:
+        raise NotImplementedError(f"implement here your own init_subject function to initialize {name}")
 
 
 def run_repair(repairer: Repairer):
@@ -35,8 +45,6 @@ def run_repair(repairer: Repairer):
 
 
 def main():
-    import argparse
-
     parser = argparse.ArgumentParser(description="Repair trained Modelizer models.", add_help=False)
     parser.add_argument('--help', '-h', action='store_true', help='Show this help message and exit, including Repairer options.')
     args, unknown = parser.parse_known_args()
@@ -51,15 +59,6 @@ def main():
     arguments = Repairer.parse_arguments()
 
     # Initializing the subject instance
-
-    try:
-        from modelizer.generators.implementations import init_subject
-    except (ImportError, ModuleNotFoundError):
-        from modelizer.generators.subjects import BaseSubject
-
-        def init_subject(name: str) -> BaseSubject:
-            raise NotImplementedError(f"implement here your own init_subject function to initialize {name}")
-
     arguments.subject_instance = init_subject(arguments.subject)
 
     # Initializing the Repairer

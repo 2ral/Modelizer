@@ -1,13 +1,12 @@
 # This scripts trains a Modelizer instance using all supported model engines.
-from pathlib import Path
+import argparse
 
-from sys import path as sys_path
-
-sys_path[0] = Path(__file__).resolve().parent.parent.as_posix()
+if __name__ == "__main__":
+    from pathlib import Path
+    from sys import path as sys_path
+    sys_path[0] = Path(__file__).resolve().parent.parent.as_posix()
 
 from modelizer import Trainer
-from modelizer.tokenizers import SentencePieceTokenizer
-import argparse
 
 
 def run_training(trainer: Trainer):
@@ -19,7 +18,7 @@ def run_training(trainer: Trainer):
     df_shuffled, train_data, test_data = trainer.load_dataset(False)
 
     # Training the tokenizer
-    tokenizer, output_tokenizer = trainer.train_encoder_decoder_tokenizers(df_shuffled)
+    tokenizer, output_tokenizer = trainer.train_seq2seq_tokenizers(df_shuffled)
 
     # Training the model
     trainer.execute(
@@ -32,6 +31,8 @@ def run_training(trainer: Trainer):
 
 
 def main():
+    from modelizer import Trainer, SentencePieceTokenizer
+
     parser = argparse.ArgumentParser(description="Train a Modelizer instance using all supported model engines.", add_help=False)
     parser.add_argument('--help', '-h', action='store_true', help='Show this help message and exit, including Trainer options.')
     args, unknown = parser.parse_known_args()
@@ -52,14 +53,14 @@ def main():
     # or initialize trainer using command line arguments (default):
     # - call Trainer.print_help() to see available options
     # - trainer = Trainer()
-    model_trainer = Trainer()
+    trainer = Trainer()
 
     # Setting encoder-decoder tokenizers
-    model_trainer.arguments.source_tokenizer_class = SentencePieceTokenizer
-    model_trainer.arguments.target_tokenizer_class = SentencePieceTokenizer
+    trainer.arguments.source_tokenizer_class = SentencePieceTokenizer
+    trainer.arguments.target_tokenizer_class = SentencePieceTokenizer
 
     # Executing the training process
-    run_training(model_trainer)
+    run_training(trainer)
 
 
 if __name__ == "__main__":

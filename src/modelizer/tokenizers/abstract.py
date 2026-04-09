@@ -147,7 +147,7 @@ class BaseTokenizer(ABC):
         return self._token_to_id.get(self._mask_token, -1)
 
     @property
-    def special_tokens_mapping(self) -> dict[str, str]:
+    def special_tokens_mapping(self) -> dict[str, str | None]:
         return {
             "bos_token": self.bos_token,
             "eos_token": self.eos_token,

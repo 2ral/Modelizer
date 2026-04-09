@@ -24,7 +24,7 @@ from modelizer.utils import (
     retrieve_init_arguments,
 )
 
-from modelizer.configs import SEED
+from modelizer.configs import SEED, VALIDATION_FRACTION
 from modelizer.learner import Modelizer
 from modelizer.models import BaseConfig
 from modelizer.generators import BaseSubject
@@ -47,6 +47,8 @@ class TrainArguments:
         subject_instance (BaseSubject | None): Optional subject instance for specialized processing.
         root_dir (str | None): Optional root directory for the model, tokenizers, results.
         subset_size (int): Subset size for the dataset to use. Ignored if less or equal to 0.
+        validation_fraction (int): Optional percentage of the training data to use for validation.
+        validation_overlap (bool): Flag to indicate if validation dataset should be disjoint from training or not.
         test_size (int): Size of the test subset.
         source (str): Identifier for the source datatype.
         target (str): Identifier for the target datatype.
@@ -93,6 +95,8 @@ class TrainArguments:
     batch_size: int
     seed: int
     backward: bool
+    validation_fraction: Optional[int] = None
+    validation_overlap: bool = False
     wandb: Optional[str] = None                                                 # sensitive information
     use_legacy: bool = False
     use_flash: bool = True
@@ -246,6 +250,8 @@ class TrainArguments:
             reduce_spaces=False,
             split_input=False,
             update_dataset=False,
+            validation_fraction=None,
+            validation_overlap=False,
             # hardware/model options
             use_flash=True,
             use_cpu=False,
@@ -324,6 +330,8 @@ class Trainer:
         arg_parser.add_argument('--subject', type=str, default="", help="Optional subject name")
         arg_parser.add_argument('--root-dir', type=str, default="", help="Optional root directory for model, tokenizers, results")
         arg_parser.add_argument('--subset-size', type=int, default=0, help="Subset size for the training dataset to use. 0 means no subset")
+        arg_parser.add_argument('--validation-fraction', type=int, default=0, help="Percentage of the training data to use for validation. 100 means 100% which means all training data should be used for validation. If 0% uses the default value")
+        arg_parser.add_argument('--validation-overlap', action='store_true', help="Flag to indicate if validation dataset should be disjoint from training or not")
         arg_parser.add_argument('--test-size', type=int, default=10000, help="Size of the test subset. 0 means no test")
         arg_parser.add_argument('--trials', type=int, default=100, help="Number of trials for hyperparameter optimization")
         arg_parser.add_argument('--test-epochs', type=int, default=5, help="Number of epochs for hyperparameter optimization")
@@ -406,6 +414,8 @@ class Trainer:
             batch_size=arguments.batch_size,
             seed=arguments.seed,
             move=arguments.move,
+            validation_fraction=arguments.validation_fraction if arguments.validation_fraction > 0 else None,
+            validation_overlap=arguments.validation_overlap,
             cleanup=arguments.cleanup,
             fast=arguments.fast,
             test_early=arguments.test_early,
@@ -577,7 +587,7 @@ class Trainer:
     def execute(self,
                 config: Optional[BaseConfig | str],
                 train_data: DataFrame,
-                test_data: Union[DataFrame, List[Tuple[str, DataFrame]], Dict[str, DataFrame]],
+                test_data: Union[DataFrame, List[Tuple[str, DataFrame]], Dict[str, DataFrame], None],
                 tokenizer: Optional[BaseTokenizer] = None,
                 output_tokenizer: Optional[BaseTokenizer] = None):
         """
@@ -593,7 +603,11 @@ class Trainer:
         """
         assert not train_data.empty, "Training DataFrame cannot be empty"
         start_time = datetime.now()
-        train_data = train_data.drop_duplicates(keep="first")
+
+        try:
+            train_data = train_data.drop_duplicates(keep="first")
+        except TypeError:
+            pass
 
         # Test datasets preparation
         if isinstance(test_data, DataFrame):
@@ -612,8 +626,10 @@ class Trainer:
             match match_target:
                 case "legacy" | "v1" | "legacymodel":
                     config = ConfigForger.forge_legacy_config(self._arguments)
-                case "encoderdecoder" | "encdec":
-                    config = ConfigForger.forge_encoder_decoder_config(self._arguments)
+                case "decoder" | "dec" | "autoregressive":
+                    config = ConfigForger.forge_decoder_config(self._arguments)
+                case "encoderdecoder" | "encdec" | "seq2seq":
+                    config = ConfigForger.forge_seq2seq_config(self._arguments)
                 case _:
                     raise ValueError(f"Invalid model type: {self._arguments.model_type}")
 
@@ -640,7 +656,10 @@ class Trainer:
                 else:
                     optimize_df = concat([df for _, df in test_datasets])
 
-            optimize_df = optimize_df.drop_duplicates(keep="first")
+            try:
+                optimize_df = optimize_df.drop_duplicates(keep="first")
+            except TypeError:
+                pass
             optimize_df.reset_index(drop=True, inplace=True)
 
             self._logger.info(f"Dataset for hyperparameter optimization: {optimize_df.shape}")
@@ -1114,7 +1133,7 @@ class Trainer:
             test_df_mixed.to_csv(output_path.joinpath("test3.csv"), index=False)
         return train_df, {"random": test_df_random, "rare": test_df_rare, "mixed": test_df_mixed}
 
-    def train_encoder_decoder_tokenizers(self,
+    def train_seq2seq_tokenizers(self,
                                          dataframe: DataFrame,
                                          source_tokenizer_factory: Optional[Callable[..., BaseTokenizer]] = None,
                                          target_tokenizer_factory: Optional[Callable[..., BaseTokenizer]] = None) -> tuple[Optional[BaseTokenizer], Optional[BaseTokenizer]]:
@@ -1160,7 +1179,36 @@ class Trainer:
 
 class ConfigForger(metaclass=SingletonMeta):
     @staticmethod
-    def forge_encoder_decoder_config(arguments: TrainArguments):  # -> EncoderDecoderConfig
+    def forge_decoder_config(arguments: TrainArguments):  # -> DecoderConfig
+        from modelizer.models.custom import DecoderConfig
+        return DecoderConfig(
+            output_dir=arguments.output_dir,
+            vocab_size=arguments.kwargs["tokenizer"].vocab_size,
+            max_sequence_length=arguments.kwargs["tokenizer"].max_sequence_length,
+            source=arguments.source,
+            target=arguments.target,
+            backward=arguments.backward,
+            use_flash=arguments.use_flash,
+            compile_model=False,
+            reduce_memory_usage=False,
+            positional_encoding_type="sinusoidal",
+            optimizer="adamw",
+            embedding_size=256,
+            hidden_size=256,
+            feedforward_size=512,
+            num_heads=8,
+            num_layers=4,
+            validation_fraction=VALIDATION_FRACTION if arguments.validation_fraction is None else arguments.validation_fraction,
+            validation_overlap=arguments.validation_overlap,
+            scheduler="none",
+            learning_rate=1e-5,
+            reduce_spaces=arguments.reduce_spaces,
+            wandb_token=arguments.wandb if arguments.wandb is not None and len(arguments.wandb) > 0 else None,
+            max_memory_usage=arguments.max_usable_memory,
+        )
+
+    @staticmethod
+    def forge_seq2seq_config(arguments: TrainArguments):  # -> EncoderDecoderConfig
         from modelizer.models.custom import EncoderDecoderConfig
         return EncoderDecoderConfig(
             output_dir=arguments.output_dir,
@@ -1184,7 +1232,8 @@ class ConfigForger(metaclass=SingletonMeta):
             enc_layers=2,
             dec_layers=4,
             learning_rate=1e-05,
-            validation_fraction=0.8,
+            validation_fraction=VALIDATION_FRACTION if arguments.validation_fraction is None else arguments.validation_fraction,
+            validation_overlap=arguments.validation_overlap,
             reduce_spaces=arguments.reduce_spaces,
             wandb_token=arguments.wandb if arguments.wandb is not None and len(arguments.wandb) > 0 else None,
             max_memory_usage=arguments.max_usable_memory,
@@ -1214,7 +1263,8 @@ class ConfigForger(metaclass=SingletonMeta):
             scheduler=None,
             learning_rate=1e-05,
             weight_decay=0.1,
-            validation_fraction=0.8,
+            validation_fraction=VALIDATION_FRACTION if arguments.validation_fraction is None else arguments.validation_fraction,
+            validation_overlap=arguments.validation_overlap,
             shuffle_train_data=True,
             report_epoch_progress=False,
             reduce_spaces=arguments.reduce_spaces,

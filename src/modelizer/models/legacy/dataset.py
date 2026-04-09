@@ -56,29 +56,32 @@ class TorchDataset(Dataset):
             'target': torch.stack([d['input_ids'] for d in target_dicts]),
         }
 
-    def get_dataloader(self, batch_size: int = 1, shuffle: bool = False, pin_memory: bool = True, use_distributed_sampler: bool = False) -> DataLoader:
-        sampler = DistributedSampler(self) if use_distributed_sampler else None
+    def get_dataloader(self, batch_size: int = 1, shuffle: bool = False, pin_memory: bool = True, distributed: bool = False) -> DataLoader:
+        sampler = DistributedSampler(self) if distributed else None
         return DataLoader(self, pin_memory=pin_memory, shuffle=shuffle, batch_size=batch_size, sampler=sampler, collate_fn=TorchDataset.__create_batch__)
 
-    def get_dataloaders(self, validation_fraction: float, batch_size: int = 1, shuffle: bool = False,
-                        pin_memory: bool = True, use_distributed_sampler: bool = False, seed: int = configs.SEED) -> tuple[DataLoader, DataLoader]:
-        if validation_fraction is None or validation_fraction == 0:
-            train_data = valid_data = self
+    def get_dataloaders(self, validation_fraction: float, batch_size: int = 1, validation_overlap: bool = False,
+                        shuffle: bool = False, pin_memory: bool = True, seed: int = configs.SEED) -> tuple[DataLoader, DataLoader]:
+        if isinstance(validation_fraction, (int, float)) and  0. < validation_fraction <= 100.:
+            validation_fraction /= 100
+        if validation_fraction is None or validation_fraction == 0 or validation_fraction > len(self):
+            train_dataset = valid_dataset = self
         elif isinstance(validation_fraction, float):
             assert 0.0 < validation_fraction < 1.0, "Train Fraction must be between 0.0 and 1.0"
             valid_size = int(len(self) * validation_fraction)
-            train_size = len(self) - valid_size
-            assert valid_size > 0, f"Validation Fraction is too small, got {valid_size}"
-            assert train_size > 0, f"Train Fraction is too small, got {train_size}"
-            train_data, valid_data = random_split(self, [train_size, valid_size], generator=torch.Generator().manual_seed(seed))
+            if validation_overlap:
+                train_dataset = self
+                train_size = len(self) - valid_size
+                _, valid_dataset = random_split(self, [train_size, valid_size])
+            else:
+                train_size = len(self) - valid_size
+                assert valid_size > 0, f"Validation Fraction is too small, got {valid_size}"
+                assert train_size > 0, f"Train Fraction is too small, got {train_size}"
+                train_dataset, valid_dataset = random_split(self, [train_size, valid_size],
+                                                            generator=torch.Generator().manual_seed(seed))
         else:
             raise ValueError(f"validation_fraction must be a floating point number or None, got {type(validation_fraction)} = {validation_fraction} instead.")
 
-        if use_distributed_sampler:
-            train_sampler, valid_sampler = DistributedSampler(train_data), DistributedSampler(valid_data)
-            shuffle = False
-        else:
-            train_sampler = valid_sampler = None
-        train_loader = DataLoader(train_data, pin_memory=pin_memory, shuffle=shuffle, collate_fn=self.__create_batch__, batch_size=batch_size, sampler=train_sampler)
-        valid_loader = DataLoader(valid_data, pin_memory=pin_memory, shuffle=shuffle, collate_fn=self.__create_batch__, batch_size=batch_size, sampler=valid_sampler)
+        train_loader = DataLoader(train_dataset, pin_memory=pin_memory, shuffle=shuffle, collate_fn=self.__create_batch__, batch_size=batch_size)
+        valid_loader = DataLoader(valid_dataset, pin_memory=pin_memory, shuffle=shuffle, collate_fn=self.__create_batch__, batch_size=batch_size)
         return train_loader, valid_loader

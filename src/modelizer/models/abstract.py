@@ -85,7 +85,8 @@ class BaseConfig(ABC):
     """This is the base class for all model configurations."""
 
     def __init__(self, output_dir: str | Path, source: str, target: str, backward: bool, reduce_memory_usage: bool,
-                 validation_steps_or_fraction: int | float, seed: int, wandb_token: Optional[str] = None, force_cpu: bool = False,
+                 validation_steps_or_fraction: Optional[int | float], validation_overlap: bool,
+                 seed: int, wandb_token: Optional[str] = None, force_cpu: bool = False,
                  total_save_limit: int = 1, free_cached_memory: bool = False, reduce_spaces: bool = False, metadata: Optional[dict[str, Any]] = None):
         """
         Constructor for the BaseConfig class. Do not create an instance of this class directly.
@@ -97,6 +98,7 @@ class BaseConfig(ABC):
         :param validation_steps_or_fraction: The interval at which to validate the model during training.
                                     If an integer, it is interpreted as the number of steps between validations.
                                     If a float, it is interpreted as a fraction of the training data used for validation.
+        :param validation_overlap: If True, the validation set will overlap with the training set. Default is False.
         :param seed: The seed value for reproducibility
         :param wandb_token: (Optional) The Weights and Biases API token
         :param force_cpu: If True, force the model to run on CPU. Default is False.
@@ -130,6 +132,7 @@ class BaseConfig(ABC):
         self._name = f"{self.source}_to_{self.target}_{self.__class__.__name__.replace('Config', '').lower()}"
         self._wandb_token = wandb_token
         self._validation_steps_or_fraction = validation_steps_or_fraction
+        self._validation_overlap = validation_overlap
         self._trainable_parameters: Optional[int] = None
         self._hyperparams: Optional[Hyperparameters] = None
         self._total_save_limit = total_save_limit
@@ -223,17 +226,27 @@ class BaseConfig(ABC):
         self._wandb_token = value
 
     @property
-    def validation_steps_or_fraction(self) -> int | float:
+    def validation_steps_or_fraction(self) -> int | float | None:
         return self._validation_steps_or_fraction
 
     @validation_steps_or_fraction.setter
-    def validation_steps_or_fraction(self, value: int | float):
-        assert isinstance(value, (int, float)), f"validation_interval must be a number, got {type(value)} => {value} instead."
+    def validation_steps_or_fraction(self, value: int | float | None):
+        assert value is None or isinstance(value, (int, float)), f"validation_interval must be a number or None, got {type(value)} => {value} instead."
         if isinstance(value, float):
             assert 0 <= value < 1.0, f"validation_interval as a fraction must be between 0.0 and 1.0, got {value} instead."
-        else:
+        elif value is not None:
             assert value >= 0, f"validation_interval must be greater than 0, got {value} instead."
         self._validation_steps_or_fraction = value
+
+    @property
+    def validation_overlap(self) -> bool:
+        return self._validation_overlap
+
+    @validation_overlap.setter
+    def validation_overlap(self, value: bool):
+        assert isinstance(value, bool), f"validation_overlap must be a boolean, got {type(value)} instead."
+        self._validation_overlap = value
+
 
     @property
     def trainable_parameters(self) -> int | None:

@@ -1,7 +1,30 @@
 # This scripts trains a Modelizer instance that model program executions features to program inputs problems.
 import argparse
 
+from datetime import datetime
+
+if __name__ == "__main__":
+    from pathlib import Path
+    from sys import path as sys_path
+    sys_path[0] = Path(__file__).resolve().parent.parent.as_posix()
+
+from modelizer.utils import DataHandlers
+from modelizer.configs import SPACE_TOKEN
+
+
+# Initialize Subject
+try:
+    from modelizer.generators.implementations import init_subject
+except (ImportError, ModuleNotFoundError):
+    from modelizer.generators.subjects import BaseSubject
+
+    def init_subject(name: str) -> BaseSubject:
+        raise NotImplementedError(f"implement here your own init_subject function to initialize {name}")
+
+
 def main():
+    from modelizer import Trainer, SentencePieceTokenizer, FeatureTokenizer
+
     parser = argparse.ArgumentParser(description="Train a Modelizer instance that models program execution features to program inputs.", add_help=False)
     parser.add_argument('--help', '-h', action='store_true', help='Show this help message and exit, including Trainer options.')
     args, unknown = parser.parse_known_args()
@@ -12,30 +35,9 @@ def main():
         Trainer.print_help()
         return
 
-    from pathlib import Path
-    from datetime import datetime
-
-    from sys import path as sys_path
-    sys_path[0] = Path(__file__).resolve().parent.parent.as_posix()
-
-    from modelizer import Trainer
-    from modelizer.utils import DataHandlers
-    from modelizer.configs import SPACE_TOKEN
-    from modelizer.tokenizers import SentencePieceTokenizer, FeatureTokenizer
-
     # Initialize the trainer
     trainer = Trainer()
     trainer.arguments.post_formating = DataHandlers.post_formating
-
-    # Initialize Subject
-    try:
-        from modelizer.generators.implementations import init_subject
-    except (ImportError, ModuleNotFoundError):
-        from modelizer.generators.subjects import BaseSubject
-
-        def init_subject(name: str) -> BaseSubject:
-            raise NotImplementedError(f"implement here your own init_subject function to initialize {name}")
-
     trainer.arguments.subject_instance = init_subject(trainer.arguments.subject)
 
     # Loading the dataset
@@ -68,6 +70,7 @@ def main():
         tokenizer=tokenizer,
         output_tokenizer=output_tokenizer,
     )
+
 
 if __name__ == "__main__":
     main()

@@ -33,6 +33,7 @@ class CustomConfig(BaseConfig):
                  eps: float = configs.EPS,
                  clip_grad: float = configs.CLIP_GRAD,
                  validation_fraction: float = configs.VALIDATION_FRACTION,
+                 validation_overlap: bool = False,
                  checkpoint_interval: int = configs.CHECKPOINT_INTERVAL,
                  compile_model: bool = False,
                  force_cpu: bool = False,
@@ -63,6 +64,7 @@ class CustomConfig(BaseConfig):
         :param eps: Epsilon parameter for the optimizer. Default is configs.EPS.
         :param clip_grad: Gradient clipping value. Default is configs.CLIP_GRAD.
         :param validation_fraction: Training dataset fraction used to validate the model during training. Default is configs.VALIDATION_FRACTION.
+        :param validation_overlap: If True, the validation set will overlap with the training set. Default is False.
         :param checkpoint_interval: Interval for saving checkpoints. Default is configs.CHECKPOINT_INTERVAL.
         :param compile_model: If True, compile the model before training. Default is False.
         :param force_cpu: If True, force the model to run on CPU. Default is False.
@@ -74,8 +76,8 @@ class CustomConfig(BaseConfig):
         :param reduce_spaces: If True, the model will reduce spaces in the input data.
         :param metadata: Optional metadata dictionary to store additional information about the model.
         """
-        super().__init__(output_dir, source, target, backward, reduce_memory_usage, validation_fraction, seed,
-                         wandb_token, force_cpu, total_save_limit, free_cached_memory, reduce_spaces, metadata)
+        super().__init__(output_dir, source, target, backward, reduce_memory_usage, validation_fraction, validation_overlap,
+                         seed, wandb_token, force_cpu, total_save_limit, free_cached_memory, reduce_spaces, metadata)
         self._model_state = None
         self._optimizer_state = None
         self._tokenizer_path = None
@@ -403,7 +405,8 @@ class CustomModel(BaseModel):
         train_dataloader, valid_dataloader = self.__forge_dataset__(dataframe).get_dataloaders(
             batch_size=batch_size,
             shuffle=True,
-            validation_fraction=self.config.validation_steps_or_fraction
+            validation_fraction=self.config.validation_steps_or_fraction,
+            validation_overlap=self.config.validation_overlap,
         )
 
         self._logger.info("Training started...")
